@@ -1,0 +1,51 @@
+name: Build frontend application
+run-name: Build frontend application from ${{ github.ref_name }} branch
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  install:
+    runs-on: ubuntu-22.04
+    container:
+      image: node:18.16.0
+      options: --user 1001
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Use cache
+        id: cache_deps
+        uses: ./.github/actions/cache
+        with:
+          lookup-only: true
+      - if: ${{ steps.cache_deps.outputs.cache-hit != 'true' }}
+        name: Install dependencies
+        run: |
+          npm install
+
+  lint:
+    runs-on: ubuntu-22.04
+    container: node:18.16.0
+    needs: [ install ]
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Use cache
+        uses: ./.github/actions/cache
+      - name: Build
+        run: npm run lint
+
+  build:
+    runs-on: ubuntu-22.04
+    container: node:18.16.0
+    needs: [ install ]
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Use cache
+        uses: ./.github/actions/cache
+      - name: Build
+        run: |
+          npm run build:development
